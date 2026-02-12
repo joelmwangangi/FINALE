@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import base64
-import os
 
 # -----------------------------
 # 1. Page Setup
@@ -34,9 +33,9 @@ if menu == "🏠 Home":
 
     col1, col2 = st.columns(2)
     with col1:
-        st.image("placeholder_roc.png", caption="ROC Curves Comparison", use_container_width=True)
+        st.info("📊 ROC Curves comparison will be displayed here.")
     with col2:
-        st.image("placeholder_feature_importance.png", caption="Top Feature Importances", use_container_width=True)
+        st.info("📈 Feature importance chart will be displayed here.")
 
 # -----------------------------
 # 4. Model Performance Section
@@ -57,32 +56,61 @@ elif menu == "📊 Model Performance":
     st.bar_chart(df.set_index('Model')["Accuracy"])
 
 # -----------------------------
-# 5. Prediction Section (UI Only)
+# 5. Prediction Section (Interactive UI)
 # -----------------------------
 elif menu == "🧠 Predict Default Risk":
-    st.header("🧠 Make a Prediction")
-    uploaded_file = st.file_uploader("📂 Upload Borrower Data (CSV)", type=["csv"])
+    st.header("🧠 Predict Default Risk")
 
-    if uploaded_file:
-        user_df = pd.read_csv(uploaded_file)
-        st.write("### Uploaded Data Preview:")
-        st.dataframe(user_df.head())
+    st.subheader("Enter Borrower Data Manually")
+    with st.form("borrower_form"):
+        age = st.number_input("Age", min_value=18, max_value=100, value=30)
+        income = st.number_input("Income ($)", min_value=0, value=50000)
+        loan_amount = st.number_input("Loan Amount ($)", min_value=0, value=15000)
+        loan_term = st.number_input("Loan Term (months)", min_value=6, max_value=60, value=36)
+        credit_score = st.number_input("Credit Score", min_value=300, max_value=850, value=700)
+        num_credit_lines = st.number_input("Number of Credit Lines", min_value=0, value=3)
+        has_mortgage = st.selectbox("Has Mortgage?", options=["No", "Yes"])
+        has_cosigner = st.selectbox("Has Co-Signer?", options=["No", "Yes"])
+        employment_length = st.number_input("Employment Length (years)", min_value=0, value=5)
+        existing_loan_balance = st.number_input("Existing Loan Balance ($)", min_value=0, value=0)
 
-        # Placeholder for prediction results
-        st.write("### 🧾 Prediction Results (Placeholder)")
-        st.dataframe(pd.DataFrame({
-            "Logistic Regression": [0.0] * len(user_df),
-            "Random Forest": [0.0] * len(user_df),
-            "MLP": [0.0] * len(user_df),
-            "Deep Neural Network": [0.0] * len(user_df),
-            "Average Probability": [0.0] * len(user_df),
-            "Predicted Default": [0] * len(user_df)
-        }))
+        submitted = st.form_submit_button("Predict Default Risk")
 
-        st.write("### 📈 Default Risk Overview (Placeholder)")
-        st.bar_chart([0] * len(user_df))
-    else:
-        st.info("Upload a CSV file containing borrower data to see predictions here.")
+    if submitted:
+        # Convert categorical fields to numeric placeholders
+        has_mortgage_num = 1 if has_mortgage == "Yes" else 0
+        has_cosigner_num = 1 if has_cosigner == "Yes" else 0
+
+        # Create dataframe with one row (like a model input)
+        input_df = pd.DataFrame({
+            "Age": [age],
+            "Income": [income],
+            "LoanAmount": [loan_amount],
+            "Loan_Term": [loan_term],
+            "Credit_Score": [credit_score],
+            "NumCreditLines": [num_credit_lines],
+            "HasMortgage": [has_mortgage_num],
+            "HasCoSigner": [has_cosigner_num],
+            "Employment_Length": [employment_length],
+            "Existing_Loan_Balance": [existing_loan_balance]
+        })
+
+        st.write("### Borrower Data Preview")
+        st.dataframe(input_df)
+
+        # Placeholder predictions
+        st.write("### 🧾 Predicted Default Probabilities (Placeholder)")
+        results_df = pd.DataFrame({
+            "Logistic Regression": [0.45],
+            "Random Forest": [0.50],
+            "MLP": [0.48],
+            "Deep Neural Network": [0.52],
+            "Average Probability": [0.49],
+            "Predicted Default": [0]  # 0 = No Default, 1 = Default
+        })
+        st.dataframe(results_df)
+        st.write("### 📈 Default Risk Overview")
+        st.bar_chart([0.49])  # placeholder for average probability chart
 
 # -----------------------------
 # 6. Sample Data Section
@@ -113,4 +141,4 @@ elif menu == "📂 Sample Data":
 # Footer
 # -----------------------------
 st.markdown("---")
-st.caption("Developed for Loan Default Prediction Project — UI-only version.")
+st.caption("Developed for Loan Default Prediction Project — UI-only version with interactive borrower input.")

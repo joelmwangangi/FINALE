@@ -5,6 +5,7 @@ import joblib
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
+import os
 import base64
 
 # -----------------------------
@@ -15,15 +16,36 @@ st.title("💰 Loan Default Prediction System")
 st.write("Predict the likelihood of borrowers defaulting on loans using trained Machine Learning and Deep Learning models.")
 
 # -----------------------------
-# 2. Load Models & Assets
+# 2. Load Models & Assets (with error handling)
 # -----------------------------
 @st.cache_resource
 def load_models():
-    scaler = joblib.load("models/scaler.joblib")
-    lr_model = joblib.load("models/logistic_regression_model.joblib")
-    rf_model = joblib.load("models/random_forest_model.joblib")
-    mlp_model = joblib.load("models/mlp_model.joblib")
-    dnn_model = tf.keras.models.load_model("models/deep_learning_model.h5")
+    model_dir = "models"
+    required_files = [
+        "scaler.joblib",
+        "logistic_regression_model.joblib",
+        "random_forest_model.joblib",
+        "mlp_model.joblib",
+        "deep_learning_model.h5"
+    ]
+
+    missing = [f for f in required_files if not os.path.exists(os.path.join(model_dir, f))]
+    if missing:
+        st.error("❌ Missing required model files in the 'models/' directory:")
+        for m in missing:
+            st.write(f"- {m}")
+        st.stop()  # Stop execution safely
+
+    try:
+        scaler = joblib.load(os.path.join(model_dir, "scaler.joblib"))
+        lr_model = joblib.load(os.path.join(model_dir, "logistic_regression_model.joblib"))
+        rf_model = joblib.load(os.path.join(model_dir, "random_forest_model.joblib"))
+        mlp_model = joblib.load(os.path.join(model_dir, "mlp_model.joblib"))
+        dnn_model = tf.keras.models.load_model(os.path.join(model_dir, "deep_learning_model.h5"))
+    except Exception as e:
+        st.error(f"⚠️ Error loading models: {e}")
+        st.stop()
+
     return scaler, lr_model, rf_model, mlp_model, dnn_model
 
 scaler, lr_model, rf_model, mlp_model, dnn_model = load_models()
@@ -47,21 +69,26 @@ if menu == "🏠 Home":
 
     col1, col2 = st.columns(2)
     with col1:
-        st.image("models/roc_curves.png", caption="ROC Curves Comparison", use_container_width=True)
+        if os.path.exists("models/roc_curves.png"):
+            st.image("models/roc_curves.png", caption="ROC Curves Comparison", use_container_width=True)
+        else:
+            st.warning("ROC curves image not found.")
     with col2:
-        st.image("models/feature_importance.png", caption="Top 15 Feature Importances (Random Forest)", use_container_width=True)
+        if os.path.exists("models/feature_importance.png"):
+            st.image("models/feature_importance.png", caption="Top 15 Feature Importances (Random Forest)", use_container_width=True)
+        else:
+            st.warning("Feature importance image not found.")
 
 # -----------------------------
 # 5. Model Performance Section
 # -----------------------------
 elif menu == "📊 Model Performance":
     st.header("📊 Model Performance Comparison")
-    try:
+    if os.path.exists("models/model_performance_comparison.csv"):
         df = pd.read_csv("models/model_performance_comparison.csv")
         st.dataframe(df, use_container_width=True)
-
         st.bar_chart(df.set_index('Model')["Accuracy"])
-    except FileNotFoundError:
+    else:
         st.error("Performance comparison file not found. Please ensure 'model_performance_comparison.csv' exists in the 'models/' folder.")
 
 # -----------------------------

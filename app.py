@@ -5,33 +5,37 @@ import joblib
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
-import base64
 import os
+import base64
 
 # -----------------------------
 # 1. Page Setup
 # -----------------------------
 st.set_page_config(page_title="Loan Default Prediction", layout="wide")
 st.title("💰 Loan Default Prediction System")
-st.write("Predict the likelihood of borrowers defaulting on loans using trained Machine Learning and Deep Learning models.")
+st.write(
+    "Predict the likelihood of borrowers defaulting on loans using trained Machine Learning and Deep Learning models."
+)
 
 # -----------------------------
-# 2. Load Models & Assets (with absolute paths)
+# 2. Paths & Model Loader
 # -----------------------------
+MODEL_DIR = "models"  # relative folder for deployment
+
 @st.cache_resource
 def load_models():
-    # Absolute paths
-    scaler_path = r"C:\Users\JOEL\models\scaler.joblib"
-    lr_path = r"C:\Users\JOEL\models\logistic_regression_model.joblib"
-    rf_path = r"C:\Users\JOEL\models\random_forest_model.joblib"
-    mlp_path = r"C:\Users\JOEL\models\mlp_model.joblib"
-    dnn_path = r"C:\Users\JOEL\models\deep_learning_model.h5"
+    # Model paths
+    scaler_path = os.path.join(MODEL_DIR, "scaler.joblib")
+    lr_path = os.path.join(MODEL_DIR, "logistic_regression_model.joblib")
+    rf_path = os.path.join(MODEL_DIR, "random_forest_model.joblib")
+    mlp_path = os.path.join(MODEL_DIR, "mlp_model.joblib")
+    dnn_path = os.path.join(MODEL_DIR, "deep_learning_model.h5")
 
-    # Check if all files exist
+    # Check all files exist
     paths = [scaler_path, lr_path, rf_path, mlp_path, dnn_path]
     missing = [p for p in paths if not os.path.exists(p)]
     if missing:
-        st.error("❌ Missing required model files:")
+        st.error("❌ Missing required model files in 'models/' folder:")
         for m in missing:
             st.write(f"- {m}")
         st.stop()
@@ -54,7 +58,10 @@ scaler, lr_model, rf_model, mlp_model, dnn_model = load_models()
 # -----------------------------
 # 3. Sidebar Navigation
 # -----------------------------
-menu = st.sidebar.radio("Navigation", ["🏠 Home", "📊 Model Performance", "🧠 Predict Default Risk", "📂 Sample Data"])
+menu = st.sidebar.radio(
+    "Navigation",
+    ["🏠 Home", "📊 Model Performance", "🧠 Predict Default Risk", "📂 Sample Data"]
+)
 
 # -----------------------------
 # 4. Home Section
@@ -70,13 +77,13 @@ if menu == "🏠 Home":
 
     col1, col2 = st.columns(2)
     with col1:
-        roc_path = r"C:\Users\JOEL\models\roc_curves.png"
+        roc_path = os.path.join(MODEL_DIR, "roc_curves.png")
         if os.path.exists(roc_path):
             st.image(roc_path, caption="ROC Curves Comparison", use_container_width=True)
         else:
             st.warning("ROC curves image not found.")
     with col2:
-        fi_path = r"C:\Users\JOEL\models\feature_importance.png"
+        fi_path = os.path.join(MODEL_DIR, "feature_importance.png")
         if os.path.exists(fi_path):
             st.image(fi_path, caption="Top 15 Feature Importances (Random Forest)", use_container_width=True)
         else:
@@ -87,21 +94,21 @@ if menu == "🏠 Home":
 # -----------------------------
 elif menu == "📊 Model Performance":
     st.header("📊 Model Performance Comparison")
-    perf_path = r"C:\Users\JOEL\models\model_performance_comparison.csv"
+    perf_path = os.path.join(MODEL_DIR, "model_performance_comparison.csv")
     if os.path.exists(perf_path):
         df = pd.read_csv(perf_path)
         st.dataframe(df, use_container_width=True)
         st.bar_chart(df.set_index('Model')["Accuracy"])
     else:
-        st.error("Performance comparison file not found. Please ensure the CSV exists.")
+        st.error("Performance comparison file not found. Please add 'model_performance_comparison.csv' to the 'models/' folder.")
 
 # -----------------------------
 # 6. Prediction Section
 # -----------------------------
 elif menu == "🧠 Predict Default Risk":
     st.header("🧠 Make a Prediction")
-
     uploaded_file = st.file_uploader("📂 Upload Borrower Data (CSV)", type=["csv"])
+
     if uploaded_file:
         user_df = pd.read_csv(uploaded_file)
         st.write("### Uploaded Data Preview:")
@@ -114,9 +121,9 @@ elif menu == "🧠 Predict Default Risk":
             # Predictions
             st.subheader("🔍 Model Predictions")
             preds = {
-                "Logistic Regression": lr_model.predict_proba(X_scaled)[:,1],
-                "Random Forest": rf_model.predict_proba(X_scaled)[:,1],
-                "MLP": mlp_model.predict_proba(X_scaled)[:,1],
+                "Logistic Regression": lr_model.predict_proba(X_scaled)[:, 1],
+                "Random Forest": rf_model.predict_proba(X_scaled)[:, 1],
+                "MLP": mlp_model.predict_proba(X_scaled)[:, 1],
                 "Deep Neural Network": dnn_model.predict(X_scaled).ravel()
             }
 
@@ -126,10 +133,12 @@ elif menu == "🧠 Predict Default Risk":
 
             st.write("### 🧾 Prediction Results:")
             st.dataframe(results_df)
+            st.write("### 📈 Default Risk Overview:")
             st.bar_chart(results_df[["Average Probability"]])
 
         except Exception as e:
             st.error(f"Error during prediction: {e}")
+
     else:
         st.info("Upload a CSV file containing borrower data to generate predictions.")
 
@@ -152,7 +161,7 @@ elif menu == "📂 Sample Data":
     })
     st.dataframe(sample_data)
 
-    # Download button
+    # Download button for CSV
     csv = sample_data.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()
     href = f'<a href="data:file/csv;base64,{b64}" download="sample_input.csv">📥 Download Sample CSV</a>'

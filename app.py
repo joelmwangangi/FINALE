@@ -1,12 +1,7 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import joblib
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
-import os
 import base64
+import os
 
 # -----------------------------
 # 1. Page Setup
@@ -14,49 +9,11 @@ import base64
 st.set_page_config(page_title="Loan Default Prediction", layout="wide")
 st.title("💰 Loan Default Prediction System")
 st.write(
-    "Predict the likelihood of borrowers defaulting on loans using trained Machine Learning and Deep Learning models."
+    "Predict the likelihood of borrowers defaulting on loans using Machine Learning and Deep Learning models."
 )
 
 # -----------------------------
-# 2. Paths & Model Loader
-# -----------------------------
-MODEL_DIR = "models"  # relative folder for deployment
-
-@st.cache_resource
-def load_models():
-    # Model paths
-    scaler_path = os.path.join(MODEL_DIR, "scaler.joblib")
-    lr_path = os.path.join(MODEL_DIR, "logistic_regression_model.joblib")
-    rf_path = os.path.join(MODEL_DIR, "random_forest_model.joblib")
-    mlp_path = os.path.join(MODEL_DIR, "mlp_model.joblib")
-    dnn_path = os.path.join(MODEL_DIR, "deep_learning_model.h5")
-
-    # Check all files exist
-    paths = [scaler_path, lr_path, rf_path, mlp_path, dnn_path]
-    missing = [p for p in paths if not os.path.exists(p)]
-    if missing:
-        st.error("❌ Missing required model files in 'models/' folder:")
-        for m in missing:
-            st.write(f"- {m}")
-        st.stop()
-
-    # Load models
-    try:
-        scaler = joblib.load(scaler_path)
-        lr_model = joblib.load(lr_path)
-        rf_model = joblib.load(rf_path)
-        mlp_model = joblib.load(mlp_path)
-        dnn_model = tf.keras.models.load_model(dnn_path)
-    except Exception as e:
-        st.error(f"⚠️ Error loading models: {e}")
-        st.stop()
-
-    return scaler, lr_model, rf_model, mlp_model, dnn_model
-
-scaler, lr_model, rf_model, mlp_model, dnn_model = load_models()
-
-# -----------------------------
-# 3. Sidebar Navigation
+# 2. Sidebar Navigation
 # -----------------------------
 menu = st.sidebar.radio(
     "Navigation",
@@ -64,7 +21,7 @@ menu = st.sidebar.radio(
 )
 
 # -----------------------------
-# 4. Home Section
+# 3. Home Section
 # -----------------------------
 if menu == "🏠 Home":
     st.header("Overview")
@@ -77,33 +34,30 @@ if menu == "🏠 Home":
 
     col1, col2 = st.columns(2)
     with col1:
-        roc_path = os.path.join(MODEL_DIR, "roc_curves.png")
-        if os.path.exists(roc_path):
-            st.image(roc_path, caption="ROC Curves Comparison", use_container_width=True)
-        else:
-            st.warning("ROC curves image not found.")
+        st.image("placeholder_roc.png", caption="ROC Curves Comparison", use_container_width=True)
     with col2:
-        fi_path = os.path.join(MODEL_DIR, "feature_importance.png")
-        if os.path.exists(fi_path):
-            st.image(fi_path, caption="Top 15 Feature Importances (Random Forest)", use_container_width=True)
-        else:
-            st.warning("Feature importance image not found.")
+        st.image("placeholder_feature_importance.png", caption="Top Feature Importances", use_container_width=True)
 
 # -----------------------------
-# 5. Model Performance Section
+# 4. Model Performance Section
 # -----------------------------
 elif menu == "📊 Model Performance":
     st.header("📊 Model Performance Comparison")
-    perf_path = os.path.join(MODEL_DIR, "model_performance_comparison.csv")
-    if os.path.exists(perf_path):
-        df = pd.read_csv(perf_path)
-        st.dataframe(df, use_container_width=True)
-        st.bar_chart(df.set_index('Model')["Accuracy"])
-    else:
-        st.error("Performance comparison file not found. Please add 'model_performance_comparison.csv' to the 'models/' folder.")
+
+    # Placeholder dataframe
+    data = {
+        "Model": ["Logistic Regression", "Random Forest", "MLP", "Deep Neural Network"],
+        "Accuracy": [0.85, 0.88, 0.86, 0.90],
+        "Precision": [0.80, 0.87, 0.82, 0.89],
+        "Recall": [0.78, 0.85, 0.81, 0.88],
+        "F1": [0.79, 0.86, 0.81, 0.88]
+    }
+    df = pd.DataFrame(data)
+    st.dataframe(df, use_container_width=True)
+    st.bar_chart(df.set_index('Model')["Accuracy"])
 
 # -----------------------------
-# 6. Prediction Section
+# 5. Prediction Section (UI Only)
 # -----------------------------
 elif menu == "🧠 Predict Default Risk":
     st.header("🧠 Make a Prediction")
@@ -114,36 +68,24 @@ elif menu == "🧠 Predict Default Risk":
         st.write("### Uploaded Data Preview:")
         st.dataframe(user_df.head())
 
-        try:
-            # Scale input data
-            X_scaled = scaler.transform(user_df)
+        # Placeholder for prediction results
+        st.write("### 🧾 Prediction Results (Placeholder)")
+        st.dataframe(pd.DataFrame({
+            "Logistic Regression": [0.0] * len(user_df),
+            "Random Forest": [0.0] * len(user_df),
+            "MLP": [0.0] * len(user_df),
+            "Deep Neural Network": [0.0] * len(user_df),
+            "Average Probability": [0.0] * len(user_df),
+            "Predicted Default": [0] * len(user_df)
+        }))
 
-            # Predictions
-            st.subheader("🔍 Model Predictions")
-            preds = {
-                "Logistic Regression": lr_model.predict_proba(X_scaled)[:, 1],
-                "Random Forest": rf_model.predict_proba(X_scaled)[:, 1],
-                "MLP": mlp_model.predict_proba(X_scaled)[:, 1],
-                "Deep Neural Network": dnn_model.predict(X_scaled).ravel()
-            }
-
-            results_df = pd.DataFrame(preds)
-            results_df["Average Probability"] = results_df.mean(axis=1)
-            results_df["Predicted Default"] = (results_df["Average Probability"] >= 0.5).astype(int)
-
-            st.write("### 🧾 Prediction Results:")
-            st.dataframe(results_df)
-            st.write("### 📈 Default Risk Overview:")
-            st.bar_chart(results_df[["Average Probability"]])
-
-        except Exception as e:
-            st.error(f"Error during prediction: {e}")
-
+        st.write("### 📈 Default Risk Overview (Placeholder)")
+        st.bar_chart([0] * len(user_df))
     else:
-        st.info("Upload a CSV file containing borrower data to generate predictions.")
+        st.info("Upload a CSV file containing borrower data to see predictions here.")
 
 # -----------------------------
-# 7. Sample Data Section
+# 6. Sample Data Section
 # -----------------------------
 elif menu == "📂 Sample Data":
     st.header("📂 Sample Borrower Data Format")
@@ -171,4 +113,4 @@ elif menu == "📂 Sample Data":
 # Footer
 # -----------------------------
 st.markdown("---")
-st.caption("Developed for Loan Default Prediction Project — using Machine Learning & Deep Learning models.")
+st.caption("Developed for Loan Default Prediction Project — UI-only version.")

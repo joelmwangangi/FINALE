@@ -37,11 +37,11 @@ def load_models():
         st.stop()  # Stop execution safely
 
     try:
-        scaler = joblib.load(os.path.join(model_dir, "scaler.joblib"))
-        lr_model = joblib.load(os.path.join(model_dir, "logistic_regression_model.joblib"))
-        rf_model = joblib.load(os.path.join(model_dir, "random_forest_model.joblib"))
-        mlp_model = joblib.load(os.path.join(model_dir, "mlp_model.joblib"))
-        dnn_model = tf.keras.models.load_model(os.path.join(model_dir, "deep_learning_model.h5"))
+        scaler = joblib.load(os.path.join(model_dir, r"C:\Users\JOEL\models\scaler.joblib"))
+        lr_model = joblib.load(os.path.join(model_dir, r"C:\Users\JOEL\models\logistic_regression_model.joblib"))
+        rf_model = joblib.load(os.path.join(model_dir, r"C:\Users\JOEL\models\random_forest_model.joblib"))
+        mlp_model = joblib.load(os.path.join(model_dir, r"C:\Users\JOEL\models\mlp_model.joblib"))
+        dnn_model = tf.keras.models.load_model(os.path.join(model_dir, r"C:\Users\JOEL\models\deep_learning_model.h5"))
     except Exception as e:
         st.error(f"⚠️ Error loading models: {e}")
         st.stop()
